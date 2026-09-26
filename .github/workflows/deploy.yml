@@ -37,9 +37,16 @@ jobs:
 
       - name: Sync HTML to S3
         run: |
+          # The legal pages are published from zentrix-ai-tech/adpe-store/legal,
+          # not from here. Excluded paths are neither uploaded nor deleted, so
+          # --delete below cannot remove them and a stale copy here cannot
+          # overwrite them. Play and the App Store cite all three URLs.
           aws s3 sync . "s3://$S3_BUCKET/" \
             --exclude "*" \
             --include "*.html" \
+            --exclude "privacy.html" \
+            --exclude "delete-account.html" \
+            --exclude "support.html" \
             --content-type "text/html; charset=utf-8" \
             --cache-control "public, max-age=300, must-revalidate" \
             --delete \
@@ -59,7 +66,7 @@ jobs:
       - name: Smoke test live site
         run: |
           fail=0
-          for path in "/" "/privacy" "/login"; do
+          for path in "/" "/privacy" "/delete-account" "/support" "/login"; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$SITE_URL$path")
             if [ "$code" = "200" ]; then
               echo "OK   $path -> $code"
